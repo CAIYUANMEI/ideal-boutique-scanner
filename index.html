@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDEAL BOUTIQUE - Scanner QR</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  text-align: center;
+  padding: 20px;
+}
+.container {
+  background: white;
+  max-width: 430px;
+  margin: 20px auto;
+  padding: 25px;
+  border-radius: 18px;
+}
+h2 { color: #74151b; }
+button {
+  background: #243650;
+  color: white;
+  border: 0;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 17px;
+  width: 100%;
+  margin-top: 15px;
+}
+#reader { margin-top: 20px; }
+#message { margin-top: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>IDEAL BOUTIQUE</h2>
+  <h3>Scanner QR fidélité</h3>
+  <p>Présentez le QR code personnel du client devant la caméra.</p>
+  <button id="startButton" onclick="startScanner()">Ouvrir la caméra</button>
+  <div id="reader"></div>
+  <p id="message"></p>
+</div>
+
+<script>
+let scanner = null;
+
+async function startScanner() {
+  const message = document.getElementById("message");
+  message.textContent = "Ouverture de la caméra...";
+
+  try {
+    if (typeof Html5Qrcode === "undefined") {
+      throw new Error("Lecteur QR non chargé. Vérifiez Internet.");
+    }
+
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async function(decodedText) {
+        message.textContent = "QR reconnu ! Ouverture de l'espace commerçant...";
+
+        await scanner.stop();
+
+        const adminURL = "https://script.google.com/macros/s/AKfycbyWMJIc9GyPsWfAKOZLvnA6hC9-A9hhmLuNiH19xM59KAyoDLSJEwPjbldmFEtHMvzZ/exec?page=admin";
+
+        window.location.href =
+          adminURL + "&customerId=" + encodeURIComponent(decodedText);
+      }
+    );
+
+    document.getElementById("startButton").disabled = true;
+
+  } catch (error) {
+    message.textContent = "Erreur caméra : " + String(error);
+  }
+}
+</script>
+</body>
+</html>
