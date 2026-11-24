@@ -61,7 +61,7 @@ async function startScanner() {
 
     await scanner.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
+      { fps: 15, qrbox: { width: 300, height: 300 } },
       async function(decodedText) {
         message.textContent = "QR reconnu ! Ouverture de l'espace commerçant...";
 
