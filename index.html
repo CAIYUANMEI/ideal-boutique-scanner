@@ -75,7 +75,7 @@ async function startScanner() {
           window.opener.postMessage({
             type: 'IDEAL_CUSTOMER_SCANNED',
             customerId: customerId
-          }, 'https://script.google.com');
+          }, '*');
           message.textContent = 'Cliente transmise à l’espace commerçant. Vous pouvez fermer cet onglet.';
           window.close();
           return;
