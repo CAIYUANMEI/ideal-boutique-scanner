@@ -1,83 +1,82 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IDEAL BOUTIQUE - Scanner QR</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
-  text-align: center;
-  padding: 20px;
-}
-.container {
-  background: white;
-  max-width: 430px;
-  margin: 20px auto;
-  padding: 25px;
-  border-radius: 18px;
-}
-h2 { color: #74151b; }
-button {
-  background: #243650;
-  color: white;
-  border: 0;
-  padding: 16px;
-  border-radius: 10px;
-  font-size: 17px;
-  width: 100%;
-  margin-top: 15px;
-}
-#reader { margin-top: 20px; }
-#message { margin-top: 15px; }
+body{font-family:Arial,sans-serif;background:#f5f5f5;text-align:center;padding:20px}
+.container{background:white;max-width:430px;margin:20px auto;padding:25px;border-radius:18px}
+h2{color:#74151b}button{background:#243650;color:white;border:0;padding:16px;border-radius:10px;font-size:17px;width:100%;margin-top:15px}
+#reader{margin-top:20px}#message{margin-top:15px;line-height:1.5}
 </style>
 </head>
 <body>
 <div class="container">
   <h2>IDEAL BOUTIQUE</h2>
   <h3>Scanner QR fidélité</h3>
-  <p>Présentez le QR code personnel du client devant la caméra.</p>
-  <button id="startButton" onclick="startScanner()">Ouvrir la caméra</button>
+  <p>Présentez le QR code personnel de la cliente devant la caméra.</p>
+  <button id="startButton" type="button" onclick="startScanner()">Ouvrir la caméra</button>
   <div id="reader"></div>
-  <p id="message"></p>
+  <p id="message">Appuyez sur « Ouvrir la caméra » pour commencer.</p>
 </div>
-
 <script>
 let scanner = null;
+let scanDone = false;
+
+function getCustomerId(decodedText) {
+  const value = String(decodedText || '').trim();
+  try {
+    const url = new URL(value);
+    const id = url.searchParams.get('customerId') ||
+               url.searchParams.get('id') ||
+               url.searchParams.get('clientId');
+    if (id) return id.trim();
+  } catch (e) {}
+  return value;
+}
 
 async function startScanner() {
-  const message = document.getElementById("message");
-  message.textContent = "Ouverture de la caméra...";
+  const message = document.getElementById('message');
+  const button = document.getElementById('startButton');
+  message.textContent = 'Ouverture de la caméra…';
 
   try {
-    if (typeof Html5Qrcode === "undefined") {
-      throw new Error("Lecteur QR non chargé. Vérifiez Internet.");
+    if (typeof Html5Qrcode === 'undefined') {
+      throw new Error('Lecteur QR non chargé. Vérifiez votre connexion Internet.');
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('La caméra nécessite HTTPS et un navigateur compatible.');
     }
 
-    scanner = new Html5Qrcode("reader");
-
+    scanner = new Html5Qrcode('reader');
     await scanner.start(
-      { facingMode: "environment" },
-      { fps: 15, qrbox: { width: 300, height: 300 } },
+      { facingMode: 'environment' },
+      { fps: 12, qrbox: { width: 260, height: 260 } },
       async function(decodedText) {
-        message.textContent = "QR reconnu ! Ouverture de l'espace commerçant...";
+        if (scanDone) return;
+        scanDone = true;
+        button.disabled = true;
+        message.textContent = 'QR reconnu ! Retour vers la fiche cliente…';
 
-        await scanner.stop();
+        const customerId = getCustomerId(decodedText);
+        if (!customerId) {
+          scanDone = false;
+          button.disabled = false;
+          message.textContent = 'QR code reconnu, mais aucun identifiant client n’a été trouvé.';
+          return;
+        }
 
-        const adminURL = "https://script.google.com/macros/s/AKfycbyWMJIc9GyPsWfAKOZLvnA6hC9-A9hhmLuNiH19xM59KAyoDLSJEwPjbldmFEtHMvzZ/exec?page=admin";
-
-        window.location.href =
-          adminURL + "&customerId=" + encodeURIComponent(decodedText);
+        try { await scanner.stop(); } catch (e) {}
+        const adminURL = 'https://script.google.com/macros/s/AKfycbyWMJIc9GyPsWfAKOZLvnA6hC9-A9hhmLuNiH19xM59KAyoDLSJEwPjbldmFEtHMvzZ/exec?page=admin';
+        window.location.href = adminURL + '&customerId=' + encodeURIComponent(customerId);
       }
     );
-
-    document.getElementById("startButton").disabled = true;
-
+    message.textContent = 'Caméra activée. Placez le QR code dans le cadre.';
   } catch (error) {
-    message.textContent = "Erreur caméra : " + String(error);
+    button.disabled = false;
+    message.textContent = 'Erreur caméra : ' + (error && error.message ? error.message : String(error));
   }
 }
 </script>
